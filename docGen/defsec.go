@@ -302,19 +302,24 @@ func createRemediation(remediations map[string]string) string {
 Follow the appropriate remediation steps below to resolve the issue.
 
 {{< tabs groupId="remediation" >}}`
+
 	keys := make([]string, 0, len(remediations))
 	for k := range remediations {
 		keys = append(keys, k)
 	}
 	sort.Strings(keys)
 
+	var sb strings.Builder
+
+	sb.WriteString(body)
+
 	for _, k := range keys {
-		body += fmt.Sprintf(`{{%% tab name="%s" %%}}`, k)
-		body += remediations[k]
-		body += "{{% /tab %}}"
+		sb.WriteString(fmt.Sprintf(`{{%% tab name="%s" %%}}`, k))
+		sb.WriteString(remediations[k])
+		sb.WriteString("{{% /tab %}}")
 	}
-	body += "{{< /tabs >}}"
-	return body
+	sb.WriteString("{{< /tabs >}}")
+	return sb.String()
 }
 
 const defsecTemplate string = `---

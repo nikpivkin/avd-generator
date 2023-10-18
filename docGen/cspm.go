@@ -203,23 +203,28 @@ func getRemediationBodyWhereExists(remediationFile string, fromDefsec bool) stri
 
 	imageConverterRegex := regexp.MustCompile(`</br>\s?<img src=\"(.*)"\s?/>`)
 	strippedContent = imageConverterRegex.ReplaceAllString(strippedContent, "![Step]($1)\n")
-	body := ""
+	var sb strings.Builder
 
 	if !fromDefsec {
-		body += `### Recommended Actions `
-		body += "\n Follow the appropriate remediation steps below to resolve the issue."
-		body += "{{< tabs groupId=\"remediation\" >}}\n"
-		body += "{{% tab name=\"Management Console\" %}}\n"
+
+		sb.WriteString(`### Recommended Actions
+
+Follow the appropriate remediation steps below to resolve the issue.
+
+{{< tabs groupId="remediation" >}}
+{{% tab name="Management Console" %}}
+
+`)
 	}
 
-	body += "\n" + strippedContent
+	sb.WriteString(strippedContent)
 
 	if !fromDefsec {
-		body += "{{% /tab %}}\n"
-		body += "{{< /tabs >}}\n"
+		sb.WriteString("{{% /tab %}}\n")
+		sb.WriteString("{{< /tabs >}}\n")
 	}
 
-	return body
+	return sb.String()
 }
 
 const cspmTemplate = `---
