@@ -7,18 +7,22 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/aquasecurity/trivy/pkg/iac/framework"
+	"github.com/aquasecurity/trivy/pkg/iac/rego"
+	"github.com/aquasecurity/trivy/pkg/iac/rules"
 )
 
 func TestLoadsAsExpected(t *testing.T) {
+	outputDir := t.TempDir()
 
-	tempDir := t.TempDir()
-
-	generateDefsecPages("../goldens/defsec/md", tempDir)
+	rego.LoadAndRegister()
+	generateDefsecPages("../goldens/defsec/md", outputDir, rules.GetRegistered(framework.ALL))
 
 	ids := []string{"avd-aws-0018"}
 
 	for _, id := range ids {
-		content, err := os.ReadFile(fmt.Sprintf("%s/aws/code-build/%s.md", tempDir, id))
+		content, err := os.ReadFile(fmt.Sprintf("%s/aws/code-build/%s.md", outputDir, id))
 		require.NoError(t, err)
 
 		expected, err := os.ReadFile(fmt.Sprintf("../goldens/defsec/expected/%s.md", id))

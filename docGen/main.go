@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/aquasecurity/avd-generator/menu"
+	"github.com/aquasecurity/trivy/pkg/iac/framework"
+	"github.com/aquasecurity/trivy/pkg/iac/rules"
 )
 
 var (
@@ -40,15 +42,22 @@ func main() {
 		Years = append(Years, strconv.Itoa(y))
 	}
 
+	registerChecks(os.DirFS("../avd-repo/trivy-policies-repo"))
 	generateChainBenchPages("../avd-repo/chain-bench-repo/internal/checks", "../avd-repo/content/compliance")
 	generateKubeBenchPages("../avd-repo/kube-bench-repo/cfg", "../avd-repo/content/compliance")
-	generateDefsecComplianceSpecPages("../avd-repo/trivy-policies-repo/rules/specs/compliance", "../avd-repo/content/compliance")
+	generateDefsecComplianceSpecPages(
+		"../avd-repo/trivy-policies-repo/rules/specs/compliance", "../avd-repo/content/compliance",
+		rules.GetRegistered(framework.ALL),
+	)
 	generateKubeHunterPages("../avd-repo/kube-hunter-repo/docs/_kb", "../avd-repo/content/misconfig/kubernetes")
 	generateCloudSploitPages("../avd-repo/cloudsploit-repo/plugins", "../avd-repo/content/misconfig", "../avd-repo/remediations-repo/en")
 	if err := generateTraceePages("../avd-repo/tracee-repo/signatures", "../avd-repo/content/tracee", realClock{}); err != nil {
 		fail(err)
 	}
-	generateDefsecPages("../avd-repo/trivy-policies-repo/avd_docs", "../avd-repo/content/misconfig")
+	generateDefsecPages(
+		"../avd-repo/trivy-policies-repo/avd_docs", "../avd-repo/content/misconfig",
+		rules.GetRegistered(framework.ALL),
+	)
 
 	nvdGenerator := NewNvdGenerator()
 	nvdGenerator.GenerateVulnPages()

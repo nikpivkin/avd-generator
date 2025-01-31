@@ -11,14 +11,25 @@ import (
 	"strings"
 	"text/template"
 
+	"gopkg.in/yaml.v3"
+
 	"github.com/aquasecurity/avd-generator/menu"
 	"github.com/aquasecurity/avd-generator/util"
-	"github.com/aquasecurity/trivy/pkg/iac/framework"
 	"github.com/aquasecurity/trivy/pkg/iac/rego"
 	"github.com/aquasecurity/trivy/pkg/iac/rules"
 	"github.com/aquasecurity/trivy/pkg/iac/scan"
-	"gopkg.in/yaml.v3"
+	ruleTypes "github.com/aquasecurity/trivy/pkg/iac/types/rules"
 )
+
+func registerChecks(fsys fs.FS) error {
+	rules.Reset()
+	modules, err := rego.LoadPoliciesFromDirs(fsys, "checks", "lib")
+	if err != nil {
+		return fmt.Errorf("load checks: %w", err)
+	}
+	rego.RegisterRegoRules(modules)
+	return nil
+}
 
 type DefsecComplianceSpec struct {
 	Spec struct {
@@ -42,26 +53,11 @@ type DefsecComplianceSpec struct {
 	} `yaml:"spec"`
 }
 
-var funcMap = template.FuncMap{
-	"toLower":    strings.ToLower,
-	"toUpper":    strings.ToUpper,
-	"toTitle":    strings.Title,
-	"getSummary": getSummary,
-}
-
-var registeredRulesSummaries = make(map[string]string)
-
-func init() {
-	rules.Reset()
-
-	rego.LoadAndRegister()
-
-	for _, rule := range rules.GetRegistered(framework.ALL) {
-		registeredRulesSummaries[rule.GetRule().AVDID] = rule.GetRule().Summary
+func generateDefsecComplianceSpecPages(specDir, contentDir string, rules []ruleTypes.RegisteredRule) {
+	ruleSummaries := make(map[string]string)
+	for _, rule := range rules {
+		ruleSummaries[rule.GetRule().AVDID] = rule.GetRule().Summary
 	}
-}
-
-func generateDefsecComplianceSpecPages(specDir, contentDir string) {
 
 	if err := filepath.Walk(specDir, func(path string, info fs.FileInfo, err error) error {
 		if err != nil {
@@ -92,7 +88,7 @@ func generateDefsecComplianceSpecPages(specDir, contentDir string) {
 			[]menu.BreadCrumb{{Name: "Compliance", Url: "/compliance"},
 				{Name: strings.Title(spec.Spec.Category), Url: fmt.Sprintf("/compliance/%s", spec.Spec.Category)}}, spec.Spec.Category, true)
 
-		return generateDefsecComplianceSpecPage(spec, contentDir)
+		return generateDefsecComplianceSpecPage(spec, contentDir, ruleSummaries)
 
 	}); err != nil {
 		fmt.Println(err)
@@ -100,19 +96,8 @@ func generateDefsecComplianceSpecPages(specDir, contentDir string) {
 
 }
 
-func getSummary(id string) string {
-	if summary, ok := registeredRulesSummaries[id]; ok {
-		return fmt.Sprintf(" - %s", summary)
-	}
-
-	return ""
-
-}
-
-func generateDefsecComplianceSpecPage(spec DefsecComplianceSpec, contentDir string) error {
-
+func generateDefsecComplianceSpecPage(spec DefsecComplianceSpec, contentDir string, ruleSummaries map[string]string) error {
 	for _, control := range spec.Spec.Controls {
-
 		outputFilePath := filepath.Join(contentDir, spec.Spec.Category, fmt.Sprintf("%s-%s", spec.Spec.Title, spec.Spec.Version), fmt.Sprintf("%s.md", control.ID))
 
 		if err := os.MkdirAll(filepath.Dir(outputFilePath), 0755); err != nil {
@@ -122,6 +107,18 @@ func generateDefsecComplianceSpecPage(spec DefsecComplianceSpec, contentDir stri
 		outputFile, err := os.Create(outputFilePath)
 		if err != nil {
 			return err
+		}
+
+		var funcMap = template.FuncMap{
+			"toLower": strings.ToLower,
+			"toUpper": strings.ToUpper,
+			"toTitle": strings.Title,
+			"getSummary": func(id string) string {
+				if summary, ok := ruleSummaries[id]; ok {
+					return fmt.Sprintf(" - %s", summary)
+				}
+				return ""
+			},
 		}
 
 		t := template.Must(template.New("defsecPost").Funcs(funcMap).Parse(defsecComplianceTemplate))
@@ -143,9 +140,8 @@ func generateDefsecComplianceSpecPage(spec DefsecComplianceSpec, contentDir stri
 	return nil
 }
 
-func generateDefsecPages(remediationDir, contentDir string) {
-	for _, r := range rules.GetRegistered(framework.ALL) {
-
+func generateDefsecPages(remediationDir, contentDir string, rules []ruleTypes.RegisteredRule) {
+	for _, r := range rules {
 		avdId := r.GetRule().AVDID
 		topLevelID := strings.ToLower(r.GetRule().Provider.ConstName())
 		branchID := r.GetRule().Service
