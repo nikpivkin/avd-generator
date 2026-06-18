@@ -40,21 +40,21 @@ jobs:
         uses: actions/checkout@v3
         with:
           repository: aquasecurity/vuln-list
-          token: ${{ secrets.ORG_REPO_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           path: avd-repo/vuln-list
 
       - name: Checkout public vuln-list-nvd-repo
         uses: actions/checkout@v3
         with:
           repository: aquasecurity/vuln-list-nvd
-          token: ${{ secrets.ORG_REPO_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           path: avd-repo/vuln-list-nvd
 
       - name: Checkout public vuln-list-redhat-repo
         uses: actions/checkout@v3
         with:
           repository: aquasecurity/vuln-list-redhat
-          token: ${{ secrets.ORG_REPO_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           sparse-checkout: |
             api
           path: avd-repo/vuln-list-redhat
@@ -63,28 +63,28 @@ jobs:
         uses: actions/checkout@v3
         with:
           repository: aquasecurity/cloud-security-remediation-guides
-          token: ${{ secrets.ORG_REPO_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           path: avd-repo/remediations-repo
 
       - name: Checkout public cloudsploit-repo
         uses: actions/checkout@v3
         with:
           repository: aquasecurity/cloudsploit
-          token: ${{ secrets.ORG_REPO_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           path: avd-repo/cloudsploit-repo
 
-      - name: Checkout public trivy-policies-repo
+      - name: Checkout public trivy-checks-repo
         uses: actions/checkout@v3
         with:
-          repository: aquasecurity/trivy-policies
-          token: ${{ secrets.ORG_REPO_TOKEN }}
+          repository: aquasecurity/trivy-checks
+          token: ${{ secrets.GITHUB_TOKEN }}
           path: avd-repo/trivy-policies-repo
 
       - name: Checkout public chain-bench-repo
         uses: actions/checkout@v3
         with:
           repository: aquasecurity/chain-bench
-          token: ${{ secrets.ORG_REPO_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           path: avd-repo/chain-bench-repo
 
       - name: Build generator
