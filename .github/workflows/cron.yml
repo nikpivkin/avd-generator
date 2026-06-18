@@ -73,10 +73,10 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           path: avd-repo/cloudsploit-repo
 
-      - name: Checkout public trivy-policies-repo
+      - name: Checkout public trivy-checks-repo
         uses: actions/checkout@v3
         with:
-          repository: aquasecurity/trivy-policies
+          repository: aquasecurity/trivy-checks
           token: ${{ secrets.GITHUB_TOKEN }}
           path: avd-repo/trivy-policies-repo
 
